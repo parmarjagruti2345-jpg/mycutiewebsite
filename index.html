@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Pro Toolkit</title>
+<title>Student Pro Toolkit Pro</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
 margin:0;
-font-family:Arial;
-background:linear-gradient(135deg,#6366f1,#ec4899);
+font-family:Segoe UI;
+background:linear-gradient(135deg,#4f46e5,#9333ea);
 color:white;
 }
 
@@ -20,7 +20,7 @@ padding:15px;
 text-align:center;
 font-size:22px;
 font-weight:bold;
-background:rgba(0,0,0,0.2);
+background:rgba(0,0,0,0.3);
 }
 
 .section{
@@ -36,33 +36,53 @@ padding:20px;
 background:white;
 color:black;
 width:95%;
-max-width:900px;
+max-width:1100px;
 padding:25px;
 border-radius:15px;
 text-align:center;
+box-shadow:0 15px 30px rgba(0,0,0,0.3);
 }
 
-input,textarea{
-padding:10px;
-width:80%;
-max-width:400px;
-margin:10px;
+input,select{
+padding:8px;
+margin:8px;
 border-radius:8px;
 border:1px solid #ccc;
 }
 
 button{
-padding:10px 20px;
+padding:8px 18px;
 border:none;
 border-radius:20px;
-background:#6366f1;
+background:#4f46e5;
 color:white;
 cursor:pointer;
-margin:10px;
+margin:8px;
 }
 
 .hidden{display:none;}
 canvas{max-width:100%;margin-top:15px;}
+
+.toolBtn{
+display:inline-block;
+background:#f3f4f6;
+padding:15px;
+margin:10px;
+border-radius:10px;
+cursor:pointer;
+}
+.toolBtn:hover{background:#ddd6fe;}
+
+.editorPage{
+width:90%;
+max-width:800px;
+height:500px;
+border:1px solid #ccc;
+margin:10px auto;
+padding:15px;
+overflow:auto;
+text-align:left;
+}
 </style>
 </head>
 
@@ -70,156 +90,114 @@ canvas{max-width:100%;margin-top:15px;}
 
 <div class="header">🎓 Student Pro Toolkit</div>
 
-<!-- LOGIN -->
-<div class="section" id="loginPage">
+<!-- USERNAME PAGE -->
+<div class="section" id="usernamePage">
 <div class="card">
 <h2>Enter Your Name</h2>
-<input type="text" id="nameInput">
+<input type="text" id="username">
 <br>
-<button onclick="enterSite()">Enter</button>
-<p id="error" style="color:red;"></p>
+<button onclick="enter()">Enter</button>
 </div>
 </div>
 
 <!-- DASHBOARD -->
 <div class="section hidden" id="dashboard">
 <div class="card">
-<h2 id="welcomeText"></h2>
+<h2 id="welcome"></h2>
 
-<button onclick="showTool('resize')">📏 Resize Image</button>
-<button onclick="showTool('textpdf')">📝 Text to PDF</button>
-<button onclick="showTool('imagepdf')">🖼 Image to PDF</button>
+<div class="toolBtn" onclick="openTool('resize')">📏 Image Resize</div>
+<div class="toolBtn" onclick="openTool('textpdf')">📝 Text to PDF</div>
+<div class="toolBtn" onclick="openTool('imagepdf')">🖼 Image to PDF</div>
+<div class="toolBtn" onclick="openTool('bgremove')">🎨 Background Remover</div>
+
 <br>
-<button onclick="goHome()">Logout</button>
+<button onclick="logout()">Logout</button>
 </div>
 </div>
 
-<!-- TOOL AREA -->
-<div class="section hidden" id="toolArea">
+<!-- TOOL PAGE -->
+<div class="section hidden" id="toolPage">
 <div class="card">
 <h2 id="toolTitle"></h2>
 
-<div id="resizeTool" class="hidden">
-<input type="file" id="imgFile">
+<!-- BG REMOVER -->
+<div id="bgTool" class="hidden">
+<input type="file" id="bgInput">
 <br>
-<button onclick="compressImage()">Compress</button>
-<canvas id="canvas"></canvas>
+<button onclick="removeBG()">Remove Background</button>
 <br>
-<a id="downloadBtn"></a>
-</div>
-
-<div id="textTool" class="hidden">
-<textarea id="textInput" rows="5"></textarea>
+<img id="bgResult" style="max-width:100%;margin-top:15px;">
 <br>
-<button onclick="makePDF()">Download PDF</button>
-</div>
-
-<div id="imageTool" class="hidden">
-<input type="file" id="pdfImg">
-<br>
-<button onclick="imgToPDF()">Convert to PDF</button>
+<a id="downloadBG"></a>
 </div>
 
 <br>
-<button onclick="backDashboard()">Back</button>
-
+<button onclick="back()">Back</button>
 </div>
 </div>
 
 <script>
 const { jsPDF } = window.jspdf;
 
-function enterSite(){
-let name=document.getElementById("nameInput").value;
-if(name==""){
-document.getElementById("error").innerHTML="Please enter name";
+/* USERNAME */
+function enter(){
+let name=document.getElementById("username").value;
+if(name=="") return;
+document.getElementById("usernamePage").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
+document.getElementById("welcome").innerHTML="Welcome "+name+" 👋";
+}
+
+function logout(){location.reload();}
+
+/* OPEN TOOL */
+function openTool(tool){
+document.getElementById("dashboard").classList.add("hidden");
+document.getElementById("toolPage").classList.remove("hidden");
+document.getElementById("bgTool").classList.add("hidden");
+
+if(tool=="bgremove"){
+document.getElementById("bgTool").classList.remove("hidden");
+document.getElementById("toolTitle").innerHTML="AI Background Remover";
+}
+}
+
+function back(){
+document.getElementById("toolPage").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
+}
+
+/* BACKGROUND REMOVE */
+async function removeBG(){
+let file=document.getElementById("bgInput").files[0];
+if(!file) return;
+
+let formData=new FormData();
+formData.append("image_file",file);
+formData.append("size","auto");
+
+let response=await fetch("https://api.remove.bg/v1.0/removebg",{
+method:"POST",
+headers:{
+"X-Api-Key":"YOUR_API_KEY"
+},
+body:formData
+});
+
+if(!response.ok){
+alert("Error removing background");
 return;
 }
-document.getElementById("loginPage").classList.add("hidden");
-document.getElementById("dashboard").classList.remove("hidden");
-document.getElementById("welcomeText").innerHTML="Hello "+name+" 👋";
-}
 
-function goHome(){
-location.reload();
-}
+let blob=await response.blob();
+let url=URL.createObjectURL(blob);
 
-function showTool(tool){
-document.getElementById("dashboard").classList.add("hidden");
-document.getElementById("toolArea").classList.remove("hidden");
+document.getElementById("bgResult").src=url;
 
-document.getElementById("resizeTool").classList.add("hidden");
-document.getElementById("textTool").classList.add("hidden");
-document.getElementById("imageTool").classList.add("hidden");
-
-if(tool=="resize"){
-document.getElementById("resizeTool").classList.remove("hidden");
-document.getElementById("toolTitle").innerHTML="Image Resize Tool";
-}
-
-if(tool=="textpdf"){
-document.getElementById("textTool").classList.remove("hidden");
-document.getElementById("toolTitle").innerHTML="Text to PDF Tool";
-}
-
-if(tool=="imagepdf"){
-document.getElementById("imageTool").classList.remove("hidden");
-document.getElementByById
-}
-}
-
-function backDashboard(){
-document.getElementById("toolArea").classList.add("hidden");
-document.getElementById("dashboard").classList.remove("hidden");
-}
-
-/* IMAGE COMPRESS */
-function compressImage(){
-let file=document.getElementById("imgFile").files[0];
-if(!file) return;
-
-let reader=new FileReader();
-reader.onload=function(e){
-let img=new Image();
-img.onload=function(){
-let canvas=document.getElementById("canvas");
-let ctx=canvas.getContext("2d");
-
-canvas.width=img.width/2;
-canvas.height=img.height/2;
-
-ctx.drawImage(img,0,0,canvas.width,canvas.height);
-
-let link=document.getElementById("downloadBtn");
+let link=document.getElementById("downloadBG");
 link.innerHTML="Download Image";
-link.href=canvas.toDataURL("image/jpeg",0.7);
-link.download="compressed.jpg";
-}
-img.src=e.target.result;
-}
-reader.readAsDataURL(file);
-}
-
-/* TEXT TO PDF */
-function makePDF(){
-let text=document.getElementById("textInput").value;
-let doc=new jsPDF();
-doc.text(text,10,10);
-doc.save("text.pdf");
-}
-
-/* IMAGE TO PDF */
-function imgToPDF(){
-let file=document.getElementById("pdfImg").files[0];
-if(!file) return;
-
-let reader=new FileReader();
-reader.onload=function(e){
-let doc=new jsPDF();
-doc.addImage(e.target.result,'JPEG',10,10,180,150);
-doc.save("image.pdf");
-}
-reader.readAsDataURL(file);
+link.href=url;
+link.download="no-bg.png";
 }
 </script>
 
